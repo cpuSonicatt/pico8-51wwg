@@ -29,12 +29,13 @@ function blackjack()
         hand = {},
         money = 100,
         bet = 1,
-        score = "0"
+        score = 0
     }
     d  = {
         posy = 12,
         hand = {},
-        score = "??"
+        score = 0,
+        display = "??"
     }
 
 end
@@ -102,7 +103,10 @@ end
 function start()
     p.money -= p.bet
     p.hand = deal(2)
+    p.score = 0
     d.hand = deal(2)
+    d.score = 0
+    d.display = "??"
     state=2
     flp=true
     getscores()
@@ -143,7 +147,7 @@ function handle_game_choice()
     if (choice == "hit") add(p.hand, deal(1)[1])
     if (choice == "stand") state=3
     getscores()
-    check(3)
+    check(p)
 end
 
 function game_draw()
@@ -151,9 +155,10 @@ function game_draw()
 
     sp()
     prints(round_str,4,4,WHITE,YELLOW)
-    prints("dealer: "..d.score, 84, 98, WHITE, YELLOW)
+    prints("dealer: "..d.display, 84, 98, WHITE, YELLOW)
     prints("player: "..p.score, 84, 106, WHITE, YELLOW)
-    prints("   bet: "..p.bet,84,90,WHITE,YELLOW)
+    spr(11,100,89)
+    prints(": "..p.bet,108,90,WHITE,YELLOW)
 
     table_details()
 
@@ -167,8 +172,9 @@ function draw_cards()
         draw_card(p.hand[x], p.posx + ((x-1)*8) - ((#p.hand-1) * 4), p.posy - ((x-1)*8), false)
     end
 
-    if(state==3)flp=false
     for x=1,#d.hand do
+        if x==1 or state>=3 then flp=false
+        else flp=true end
         draw_card(d.hand[x], 56 + ((x-1)*8) - ((#d.hand-1) * 4), d.posy, flp)
     end
 end
@@ -207,13 +213,18 @@ function getscores()
     for card in all(d.hand)do
         add(dvs, sub(card,1,1))
     end
-    if (state==3) d.score = determine(dvs, d.score)
+    if state>=3 then
+        d.score = determine(dvs, d.score)
+        d.display = ""..d.score
+    end
     
 end
 
 function check(x)
-    if (p.score > 21 or #p.hand == 5) state=x
+    getscores()
+    if(x.score>21 or#x.hand==5)state=4
 end
+
 
 function determine(vs,x)
     local score = 0
@@ -222,23 +233,22 @@ function determine(vs,x)
         if includes(faces,v) or v == "T" then
             score += 10
         elseif v=="A" then
-            if tonum(x)+11 > 21 then
-                score += 1
-            else
-                score += 11
-            end
+            score += 11
+            if(score>21)score-=10
         else
-            score += tonum(v)
+            score += v
         end
     end
     return score
 end
 
 function dealer_update()
-    check(4)
+    check(d)
     if state == 3 then
-        if (d.score < 17) add(d.hand, deal(1)[1])
         getscores()
+        if (d.score < 17) then add(d.hand, deal(1)[1])
+        else state=4 end
+        
     end
 end
 
@@ -249,7 +259,8 @@ function dealer_draw()
     prints(round_str,4,4,WHITE,YELLOW)
     prints("dealer: "..d.score, 84, 98, WHITE, YELLOW)
     prints("player: "..p.score, 84, 106, WHITE, YELLOW)
-    prints("   bet: "..p.bet,84,90,WHITE,YELLOW)
+    spr(11,100,89)
+    prints("      : "..p.bet,84,90,WHITE,YELLOW)
 
     draw_cards()
     draw_dealer_menu()
@@ -262,7 +273,12 @@ function draw_dealer_menu()
 end
 
 function post_update()
-
+    getscores()
+    if (btnp(OH)) then
+        if (round==7) then end --game over
+        round += 1
+        state=1
+    end
 end
 
 function post_draw()
@@ -272,7 +288,8 @@ function post_draw()
     prints(round_str,4,4,WHITE,YELLOW)
     prints("dealer: "..d.score, 84, 98, WHITE, YELLOW)
     prints("player: "..p.score, 84, 106, WHITE, YELLOW)
-    prints("   bet: "..p.bet,84,90,WHITE,YELLOW)
+    spr(11,100,89)
+    prints("      : "..p.bet,84,90,WHITE,YELLOW)
 
     draw_cards()
     draw_post_menu()
@@ -283,19 +300,44 @@ function draw_post_menu()
     rectfill(0, 119, 128, 128, WHITE)
     rectfill(0, 119, 10, 128, RED)
     prints("p1", 2, 121, WHITE,DRED)
-    result = post_game()
+    print(get_post_game().."next round",14,121,DGREEN)
 end
 
-function post_game()
-    ret_str=""
-    if(p.hand>21)then
-        ret_str="BUST!"
-        p.money-=p.bet
-    elseif()then
-    elseif()then
-    elseif()then
-
+function get_post_game()
+    v1,v2=sub(p.hand[1],1,1),sub(p.hand[2],1,1)
+    if(is_bj(v1,v2))then
+        p.money+=p.bet*1.5
+        return"blackjack!"
     end
+    if(p.score>21)then
+        return"bust!"
+    end
+    if(d.score>21)then
+        p.money+=p.bet
+        return"win!"
+    end
+    if(#p.hand==5)then
+        p.money+=p.bet
+        return"win!"
+    end
+    if(p.score==d.score)then
+        return"push!"
+    end
+    if(p.score>d.score)then
+        p.money+=p.bet
+        return"win!"
+    end
+    if(d.score>p.score)then
+        return"lose!"
+    end
+    if(d.score<22)then
+        return"lose!"
+    end
+
+end
+
+function is_bj(v1,v2)
+    return (v1 == "A" or v2 == "A") and (includes(faces,v1) or includes(faces,v2))
 end
 
 function draw_card(card, posx, posy, isBlank)
