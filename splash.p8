@@ -22,10 +22,10 @@ mws = {
     "            \fct\fer\f7a\fen\fcs \f7rights!",
     "                \f8r\f9a\fai\fbn\fcb\fdo\few\f7s!",
     "-- todo: add more taglines","redstone",
-    "______","?\"love\",56,68,7"
+    "______","?\"love\",56,68,7","urrmm...",
+    "copied code","no added sugar","no artificial colours","attempt to call a nil value","off-by-one errors",
+    
 }
-
-mode="open"
 
 function splash()
     game.update=splash_update

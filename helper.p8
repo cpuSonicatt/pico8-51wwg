@@ -8,15 +8,6 @@ LEFT,RIGHT,UP,DOWN,OH,EX=0,1,2,3,4,5
 
 -- HELPER FUNCTIONS
 
--- shuffle an array
-function shuffle(t)
-    for n=1,#t*2 do -- #t*2 times seems enough
-        local a,b=flr(1+rnd(#t)),flr(1+rnd(#t))
-        t[a],t[b]=t[b],t[a]
-    end
-    return t
-end
-
 -- center a string vertically
 function c(str)
     return 64-#str*2
@@ -83,4 +74,3 @@ function prints(str,x,y,c,sc)
     ?str,x,y+1,sc
     ?str,x,y,c
 end
-

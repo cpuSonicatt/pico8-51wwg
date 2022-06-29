@@ -7,8 +7,8 @@ function blackjack()
     game.update = bj_update
     game.draw = bj_draw
 
-    updates={bet_update,game_update,dealer_update,post_update}
-    draws={bet_draw,game_draw,dealer_draw,post_draw}
+    updates={bet_update,game_update,dealer_update,post_update,go_update}
+    draws={bet_draw,game_draw,dealer_draw,post_draw,go_draw}
     
     sm={0,0,0,10,2,0,5,6,2,4,0,3,1,5,8,6}
 
@@ -20,9 +20,9 @@ function blackjack()
     mode="choose mode:"vs="vs. dealer     vs. player"
     flp=true
 
-    bet_holder=0
     cbets={"bet", "1"}
     cplay={"hit", "stand"}
+    post_message=""
     p = {
         posx = 56,
         posy = 88,
@@ -56,23 +56,20 @@ function create_deck()
             add(arr, vals[v]..suits[s])
         end
     end
-    return shuffle(arr)
+    return arr
 end
 
 function deal(amt)
-    --rnd(t) ?
     hand = {}
     for x = 1,amt do
-        add(hand, deck[1])
-        del(deck, deck[1])
+        local card=rnd(deck)
+        del(deck,card)
+        add(hand,card)
     end
     return hand
 end
 
 function bet_update()
-    if(btnp(LEFT)and sel-1>0)sel-=1
-    if(btnp(RIGHT)and sel+1<=#cplay)sel+=1
-
     cbets[2] = tostr(p.bet)
 
     bump = 0
@@ -82,13 +79,13 @@ function bet_update()
         bump = 1
     end
 
-    if (btnp(2) and p.bet + bump <= 100) then
+    if (btnp(2) and p.bet + bump <= p.money) then
         p.bet += bump
-    elseif (btnp(2) and p.bet + bump > 100) then
-        p.bet = 100
+    elseif (btnp(2) and p.bet + bump > p.money) then
+        p.bet = p.money
     end
 
-    if (btnp(3) and p.bet - bump > 1) then
+    if (btnp(3) and p.bet - bump >= 1) then
         p.bet -= bump
     elseif (btnp(3) and p.bet - bump < 1) then
         p.bet = 1
@@ -146,6 +143,12 @@ function handle_game_choice()
     choice = cplay[sel]
     if (choice == "hit") add(p.hand, deal(1)[1])
     if (choice == "stand") state=3
+    if (choice == "double down") then
+        p.money-=p.bet
+        p.bet+=p.bet
+        add(p.hand, deal(1)[1])
+        state=3
+    end
     getscores()
     check(p)
 end
@@ -154,7 +157,6 @@ function game_draw()
     cls(DGREEN)
 
     sp()
-    prints(round_str,4,4,WHITE,YELLOW)
     prints("dealer: "..d.display, 84, 98, WHITE, YELLOW)
     prints("player: "..p.score, 84, 106, WHITE, YELLOW)
     spr(11,100,89)
@@ -196,9 +198,10 @@ end
 
 function set_choices()
     cplay={"hit", "stand"}
-    if #p.hand <= 2 then
+    if #p.hand <= 2 and p.bet*2<=p.money then
         add(cplay, "double down")
-        if (sub(p.hand[1],1,1) == sub(p.hand[2],1,1)) add(cplay, "split")
+        -- if (sub(p.hand[1],1,1) == sub(p.hand[2],1,1)) add(cplay, "split")
+        -- splits to be attempted another day
     end
 end
 
@@ -256,7 +259,6 @@ function dealer_draw()
     cls(DGREEN)
     table_details()
     sp()
-    prints(round_str,4,4,WHITE,YELLOW)
     prints("dealer: "..d.score, 84, 98, WHITE, YELLOW)
     prints("player: "..p.score, 84, 106, WHITE, YELLOW)
     spr(11,100,89)
@@ -274,10 +276,13 @@ end
 
 function post_update()
     getscores()
-    if (btnp(OH)) then
-        if (round==7) then end --game over
-        round += 1
-        state=1
+    if(btnp(OH))restart()
+end
+
+function set_money()
+    if(post_message=="blackjack!")then p.money+=flr(2.5*p.bet)
+    elseif(post_message=="win!")then p.money+=2*p.bet
+    elseif(post_message=="push!")then p.money+=p.bet
     end
 end
 
@@ -285,7 +290,6 @@ function post_draw()
     cls(DGREEN)
     table_details()
     sp()
-    prints(round_str,4,4,WHITE,YELLOW)
     prints("dealer: "..d.score, 84, 98, WHITE, YELLOW)
     prints("player: "..p.score, 84, 106, WHITE, YELLOW)
     spr(11,100,89)
@@ -300,44 +304,63 @@ function draw_post_menu()
     rectfill(0, 119, 128, 128, WHITE)
     rectfill(0, 119, 10, 128, RED)
     prints("p1", 2, 121, WHITE,DRED)
-    print(get_post_game().."next round",14,121,DGREEN)
+    print(get_post_game(),14,121,DGREEN)
 end
 
 function get_post_game()
     v1,v2=sub(p.hand[1],1,1),sub(p.hand[2],1,1)
     if(is_bj(v1,v2))then
-        p.money+=p.bet*1.5
-        return"blackjack!"
+        post_message="blackjack!"
+    elseif(p.score>21)then
+        post_message="bust!"
+    elseif(d.score>21)then
+        post_message="win!"
+    elseif(#p.hand==5)then
+        post_message="win!"
+    elseif(p.score==d.score)then
+        post_message="push!"
+    elseif(p.score>d.score)then
+        post_message="win!"
+    elseif(d.score>p.score)then
+        post_message="lose!"
+    elseif(d.score<22)then
+        post_message="lose!"
     end
-    if(p.score>21)then
-        return"bust!"
-    end
-    if(d.score>21)then
-        p.money+=p.bet
-        return"win!"
-    end
-    if(#p.hand==5)then
-        p.money+=p.bet
-        return"win!"
-    end
-    if(p.score==d.score)then
-        return"push!"
-    end
-    if(p.score>d.score)then
-        p.money+=p.bet
-        return"win!"
-    end
-    if(d.score>p.score)then
-        return"lose!"
-    end
-    if(d.score<22)then
-        return"lose!"
-    end
-
+    return post_message
 end
 
 function is_bj(v1,v2)
     return (v1 == "A" or v2 == "A") and (includes(faces,v1) or includes(faces,v2))
+end
+
+function restart()
+    set_money()
+    if (p.money<=0) then
+        state+=1
+    else
+        round += 1
+        round_str="round: "..round
+        p.bet=1
+        deck=create_deck()
+        state=1    
+    end 
+end
+
+function go_update()
+    if(btnp(EX))menu()
+    if(btnp(OH))menu()
+
+end
+
+function go_draw()
+    local rs = "you lasted "..round.." round"
+    if (round!=1)rs=rs.."s"
+    rs=rs.."!"
+    cls(DGREEN)
+    prints("no more funds!", 36, 40, WHITE, YELLOW)
+    prints(rs, c(rs), 48, WHITE, YELLOW)
+    prints("❎ play again", 40, 56, WHITE, YELLOW)
+    prints("🅾️ return to menu", 30, 64, WHITE, YELLOW)
 end
 
 function draw_card(card, posx, posy, isBlank)
@@ -434,7 +457,51 @@ function draw_card_shadow(x, y)
 end
 
 function table_details()
+    local posx,posy=108,11
     sp()
+    prints(round_str,4,4,WHITE,YELLOW)
     prints(d_pays, c(d_pays), 40, WHITE, YELLOW)
     prints(d_strat, c(d_strat), 48, WHITE, YELLOW)
+    --top
+    spr(3, posx, posy)
+    spr(4, posx + 8, posy, 1, 1)
+
+    --mid
+    spr(5, posx, posy + 8)
+    spr(6, posx + 8, posy + 8)
+
+    --bottom
+    spr(4, posx, posy + 16, 1, 1, true, true)
+    spr(3, posx + 8, posy + 16, 1, 1, true, true)
+    rectfill(posx,posy+22,posx+1,posy+23,YELLOW)
+    rectfill(posx+14,posy+22,posx+15,posy+23,YELLOW)
+    rectfill(posx+2,posy+24,posx+13,posy+25,YELLOW)
+
+    if state==1 then
+        if btn(DOWN) then print("⬇️",4,95,WHITE)
+        else prints("⬇️",4,94,WHITE,YELLOW) end
+        if btn(UP) then print("⬆️",4,87,WHITE)
+        else prints("⬆️",4,86,WHITE,YELLOW) end
+        prints(":by 1",12,90,WHITE,YELLOW)
+
+        if btn(EX) then print("❎",8,103,WHITE)
+        else prints("❎",8,102,WHITE,YELLOW) end
+        prints("+  :by 10",4,102,WHITE,YELLOW)
+
+    elseif state==2 then
+    
+        if btn(LEFT) then print("⬅️",4,103,WHITE)
+        else prints("⬅️",4,102,WHITE,YELLOW) end
+        if btn(RIGHT) then print("➡️",12,103,WHITE)
+        else prints("➡️",12,102,WHITE,YELLOW) end
+
+        prints(":move",20,102,WHITE,YELLOW)
+
+    end
+    if btn(OH) then print("🅾️",4,111,WHITE)
+    else prints("🅾️",4,110,WHITE,YELLOW) end
+
+    if state!=4 then prints(":select",12,110,WHITE,YELLOW)
+    else prints(":next",12,110,WHITE,YELLOW) end
+
 end
