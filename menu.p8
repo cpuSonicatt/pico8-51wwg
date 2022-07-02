@@ -26,6 +26,7 @@ function menu_draw()
 end
 
 function draw_icons() -- box around?
+    pal()
     space=0
     for x=1,5 do
         spr(39+x,ipos[1],ipos[2]+space)

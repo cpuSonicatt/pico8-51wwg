@@ -4,8 +4,8 @@ __lua__
 
 function blackjack()
     state=1
-    game.update = bj_update
-    game.draw = bj_draw
+    game.update=bj_update
+    game.draw=bj_draw
 
     updates={bet_update,game_update,dealer_update,post_update,go_update}
     draws={bet_draw,game_draw,dealer_draw,post_draw,go_draw}
@@ -16,28 +16,23 @@ function blackjack()
     round=1
     round_str="round: "..round
     
-    suits=to_t("HDSC")vals=to_t("A23456789TJQK")faces=to_t("JQK")reds=to_t("HD")d_pays="blackjack pays 3 to 2"d_strat="dealer must stand on 17"deck=create_deck()
-    mode="choose mode:"vs="vs. dealer     vs. player"
-    flp=true
+    suits=to_t("HDSC")vals=to_t("A23456789TJQK")faces=to_t("JQK")reds=to_t("HD")d_pays="blackjack pays 3 to 2"d_strat="dealer must stand on 17"deck=create_deck()mode="choose mode:"vs="vs. dealer     vs. player"flp=true
 
-    cbets={"bet", "1"}
-    cplay={"hit", "stand"}
-    post_message=""
-    p = {
-        posx = 56,
-        posy = 88,
-        hand = {},
-        money = 100,
-        bet = 1,
-        score = 0
+    cbets={"bet","1"}cplay={"hit","stand"}post_message=""
+    p={
+        posx=56,
+        posy=88,
+        hand={},
+        money=100,
+        bet=1,
+        score=0
     }
-    d  = {
-        posy = 12,
-        hand = {},
-        score = 0,
-        display = "??"
+    d={
+        posy=12,
+        hand={},
+        score=0,
+        display="??"
     }
-
 end
 
 function bj_update()
@@ -50,18 +45,16 @@ end
 
 
 function create_deck()
-    arr = {}
-    for s = 1,4 do
-        for v = 1,13 do
-            add(arr, vals[v]..suits[s])
-        end
+    arr={}
+    for s=1,4 do
+        for v=1,13 do add(arr,vals[v]..suits[s])end
     end
     return arr
 end
 
 function deal(amt)
-    hand = {}
-    for x = 1,amt do
+    hand={}
+    for x=1,amt do
         local card=rnd(deck)
         del(deck,card)
         add(hand,card)
@@ -70,16 +63,13 @@ function deal(amt)
 end
 
 function bet_update()
-    cbets[2] = tostr(p.bet)
+    cbets[2]=tostr(p.bet)
 
-    bump = 0
-    if (btn(5)) then 
-        bump = 10
-    else
-        bump = 1
-    end
+    bump=0
+    if(btn(5))then bump=10
+    else bump=1 end
 
-    if (btnp(2) and p.bet + bump <= p.money) then
+    if(btnp(2)and p.bet + bump <= p.money) then
         p.bet += bump
     elseif (btnp(2) and p.bet + bump > p.money) then
         p.bet = p.money
@@ -104,6 +94,7 @@ function start()
     d.hand = deal(2)
     d.score = 0
     d.display = "??"
+    sel=1
     state=2
     flp=true
     getscores()
@@ -236,8 +227,10 @@ function determine(vs,x)
         if includes(faces,v) or v == "T" then
             score += 10
         elseif v=="A" then
-            score += 11
-            if(score>21)score-=10
+            -- score += 11
+            -- if(score>21)score-=10
+            if(p.score+11>21)then score+=1
+            else score+=11 end
         else
             score += v
         end
@@ -502,6 +495,7 @@ function table_details()
     else prints("🅾️",4,110,WHITE,YELLOW) end
 
     if state!=4 then prints(":select",12,110,WHITE,YELLOW)
+    elseif p.money==0 then prints(":end",12,110,WHITE,YELLOW)
     else prints(":next",12,110,WHITE,YELLOW) end
 
 end

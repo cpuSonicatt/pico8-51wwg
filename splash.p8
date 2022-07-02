@@ -22,15 +22,43 @@ mws = {
     "            \fct\fer\f7a\fen\fcs \f7rights!",
     "                \f8r\f9a\fai\fbn\fcb\fdo\few\f7s!",
     "-- todo: add more taglines","redstone",
-    "______","?\"love\",56,68,7","urrmm...",
-    "copied code","no added sugar","no artificial colours","attempt to call a nil value","off-by-one errors",
-    
+    "______",
+    "?\"love\",56,68,7",
+    "urrmmm...",
+    "copied code",
+    "no added sugar",
+    "no artificial colours",
+    "attempt to call a nil value",
+    "off-by-one errors",
+    "100% british beef",
+    "en passant",
+    "\"you blundered mate in one\""
+    ,"a little bit of monica",
+    "a little bit of erica",
+    "rm -rf /",
+    "deez nuts",
+    "the 5 lights",
+    "the crane",
+    "the curtain",
+    "the moon",
+    "the rain man",
+    "the dragon",
+    "akayoroshi",
+    "mi-yoshino",
+    "kotobuki",
+    "the sunshine of your love",
+    "moving pictures",
+    "images and words",
+    "the wall"
 }
 
 function splash()
     game.update=splash_update
     game.draw=splash_draw
-    mwt="made with"mw=rnd(mws)jt="by jacq"tmr=t()+4
+    mwt="made with"
+    -- mw="\"you blundered mate in one\""
+    mw=rnd(mws)
+    jt="by jacq"tmr=t()+4
 end
 
 function splash_update()
